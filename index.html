@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Carnet de Foi — Suivi biblique</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c2b3a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Carnet de Foi">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{
+  --ink:#1c2b3a;
+  --parchment:#f4efe2;
+  --parchment-deep:#e9e1cc;
+  --gold:#b8863c;
+  --sage:#5f7a63;
+  --clay:#a85c3f;
+  --line:rgba(28,43,58,0.14);
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--parchment);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+h1,h2,h3,.display{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--parchment);position:relative;}
+
+/* HEADER */
+.topbar{
+  padding:22px 20px 16px;
+  background:var(--ink);
+  color:var(--parchment);
+  position:relative;
+  overflow:hidden;
+}
+.topbar::after{
+  content:"";
+  position:absolute;right:-30px;top:-30px;width:140px;height:140px;
+  border-radius:50%;background:radial-gradient(circle, rgba(184,134,60,0.35), transparent 70%);
+}
+.topbar .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.65;margin:0 0 4px;}
+.topbar h1{font-size:26px;margin:0;font-weight:600;}
+.topbar .sub{font-size:13px;opacity:.75;margin-top:4px;}
+
+/* RIBBON PROGRESS (signature element) */
+.ribbon-wrap{padding:16px 20px 0;}
+.ribbon{
+  position:relative;background:#fff;border-radius:var(--radius);
+  padding:14px 16px;box-shadow:0 1px 0 var(--line);
+}
+.ribbon-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--sage);font-weight:600;}
+.ribbon-position{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;font-size:19px;margin-top:2px;}
+.ribbon-track{height:6px;background:var(--parchment-deep);border-radius:4px;margin-top:10px;overflow:hidden;}
+.ribbon-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--clay));border-radius:4px;transition:width .4s ease;}
+.ribbon-meta{display:flex;justify-content:space-between;font-size:11px;color:#7a7266;margin-top:6px;}
+
+/* CONTENT */
+.content{flex:1;padding:16px 20px 100px;}
+.card{
+  background:#fff;border-radius:var(--radius);padding:18px;margin-bottom:14px;
+  box-shadow:0 1px 0 var(--line);
+}
+.card h2{font-size:18px;margin:0 0 4px;font-weight:600;}
+.card .desc{font-size:13px;color:#71685c;margin:0 0 14px;}
+label{display:block;font-size:12px;font-weight:600;color:#544c40;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.04em;}
+input[type=text],input[type=number],select,textarea{
+  width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+  font-family:inherit;font-size:15px;background:var(--parchment);color:var(--ink);
+}
+textarea{resize:vertical;min-height:70px;}
+button{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:600;font-size:14px;
+  border:none;border-radius:10px;padding:13px 18px;cursor:pointer;
+  transition:transform .12s ease, opacity .12s ease;
+}
+button:active{transform:scale(0.97);}
+.btn-primary{background:var(--ink);color:var(--parchment);width:100%;margin-top:14px;}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-stop{background:var(--clay);color:#fff;width:100%;margin-top:14px;}
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line);width:100%;margin-top:8px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;}
+.stat{background:var(--parchment);border-radius:10px;padding:10px 8px;text-align:center;}
+.stat .num{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;font-size:20px;}
+.stat .lab{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#7a7266;margin-top:2px;}
+
+.time-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+input[type=time]{
+  width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+  font-family:inherit;font-size:15px;background:var(--parchment);color:var(--ink);
+}
+.duration-preview{
+  margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--parchment-deep);
+  display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#544c40;
+}
+.duration-preview .val{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;font-size:16px;color:var(--ink);font-weight:600;}
+.duration-preview.muted{color:#9c9384;}
+.field-error{font-size:12px;color:var(--clay);margin-top:6px;display:none;}
+.field-error.show{display:block;}
+
+.objectifs-list{list-style:none;margin:0;padding:0;}
+.objectif-item{
+  display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);
+}
+.objectif-item:last-child{border-bottom:none;}
+.objectif-num{
+  flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--parchment);
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;
+}
+.objectif-text{font-size:14px;line-height:1.45;color:var(--ink);}
+.objectifs-empty{font-size:13px;color:#7a7266;}
+
+table.hist{width:100%;border-collapse:collapse;font-size:13px;}
+table.hist th,table.hist td{padding:7px 4px;text-align:center;border-bottom:1px solid var(--line);}
+table.hist th{font-size:10px;text-transform:uppercase;color:#7a7266;letter-spacing:.05em;}
+
+/* NAV */
+.navbar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;background:#fff;border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.navbtn{
+  background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10px;color:#8b8375;padding:6px 4px;flex:1;font-weight:600;
+}
+.navbtn.active{color:var(--ink);}
+.navbtn .ic{font-size:19px;}
+
+.hidden{display:none !important;}
+.center{text-align:center;}
+.small{font-size:12px;color:#7a7266;}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.pill.ok{background:rgba(95,122,99,0.15);color:var(--sage);}
+.pill.no{background:rgba(168,92,63,0.15);color:var(--clay);}
+.guide-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);}
+.guide-item:last-child{border-bottom:none;}
+.guide-name{font-weight:600;font-size:15px;}
+.guide-sub{font-size:12px;color:#7a7266;margin-top:2px;}
+.link-quiet{background:none;border:none;color:#aaa39b;font-size:11px;text-decoration:underline;padding:4px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ONBOARDING -->
+  <div id="onboarding" class="content" style="padding-top:40px;">
+    <div class="eyebrow" style="text-align:center;color:var(--gold);text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:600;">Bienvenue</div>
+    <h1 class="display center" style="font-size:28px;margin:6px 0 6px;">Carnet de Foi</h1>
+    <p class="small center" style="margin-bottom:24px;">Un espace pour marcher, chaque jour, dans la lecture, la méditation et la prière.</p>
+    <div class="card">
+      <label>Nom</label>
+      <input type="text" id="ob-nom" placeholder="Kouassi">
+      <label>Prénom</label>
+      <input type="text" id="ob-prenom" placeholder="Marie">
+      <label>Vos objectifs (facultatif)</label>
+      <textarea id="ob-objectifs" placeholder="Un objectif par ligne, par exemple :&#10;Lire 3 chapitres par jour&#10;Prier 15 min matin et soir&#10;Mémoriser un verset par semaine"></textarea>
+      <label>Je commence par</label>
+      <select id="ob-testament">
+        <option value="AT">L'Ancien Testament</option>
+        <option value="NT">Le Nouveau Testament</option>
+      </select>
+      <button class="btn-primary" onclick="createProfile()">Commencer mon carnet</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="mainApp" class="hidden">
+    <div class="topbar">
+      <div class="eyebrow">Carnet de Foi</div>
+      <h1 id="hdr-title">Bonjour</h1>
+      <div class="sub" id="hdr-date"></div>
+    </div>
+
+    <div class="ribbon-wrap">
+      <div class="ribbon">
+        <div class="ribbon-label" id="ribbon-testament">Ancien Testament</div>
+        <div class="ribbon-position" id="ribbon-position">Genèse 1</div>
+        <div class="ribbon-track"><div class="ribbon-fill" id="ribbon-fill" style="width:0%"></div></div>
+        <div class="ribbon-meta"><span id="ribbon-pct">0%</span><span id="ribbon-count">0 / 929 chapitres</span></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ACCUEIL -->
+      <div id="tab-accueil" class="tabpane">
+        <div class="card">
+          <h2>Aujourd'hui</h2>
+          <div class="desc" id="today-date-label"></div>
+          <div class="stat-grid">
+            <div class="stat"><div class="num" id="s-lb">0</div><div class="lab">Chap. lus (LB)</div></div>
+            <div class="stat"><div class="num" id="s-med">0</div><div class="lab">Médit. (min)</div></div>
+            <div class="stat"><div class="num" id="s-ps">0</div><div class="lab">Prière (min)</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Mes objectifs</h2>
+          <div class="desc">Ce que vous vous êtes engagé(e) à vivre dans ce cheminement.</div>
+          <ul class="objectifs-list" id="mes-objectifs"></ul>
+        </div>
+      </div>
+
+      <!-- LECTURE -->
+      <div id="tab-lecture" class="tabpane hidden">
+        <div class="card">
+          <h2>Lecture biblique</h2>
+          <div class="desc">Enregistrez votre temps de lecture après coup, à l'heure près.</div>
+
+          <label>Nombre de chapitres lus</label>
+          <input type="number" id="lec-nb-chapitres" min="0" step="1" placeholder="Ex : 3">
+
+          <div class="time-row">
+            <div>
+              <label>Heure de début</label>
+              <input type="time" id="lec-heure-debut" oninput="updateDurationPreview('lec')">
+            </div>
+            <div>
+              <label>Heure de fin</label>
+              <input type="time" id="lec-heure-fin" oninput="updateDurationPreview('lec')">
+            </div>
+          </div>
+          <div class="duration-preview muted" id="lec-duree-preview"><span>Durée</span><span class="val" id="lec-duree-val">—</span></div>
+          <div class="field-error" id="lec-error">Vérifiez les heures saisies (l'heure de fin doit suivre l'heure de début).</div>
+
+          <label>Vous êtes arrivé(e) jusqu'au livre</label>
+          <select id="lec-livre"></select>
+          <label>Jusqu'au chapitre</label>
+          <select id="lec-chapitre"></select>
+
+          <button class="btn-primary" onclick="saveLecture()">Enregistrer la lecture</button>
+        </div>
+      </div>
+
+      <!-- MEDITATION -->
+      <div id="tab-med" class="tabpane hidden">
+        <div class="card">
+          <h2>Méditation</h2>
+          <div class="desc">Un temps calme pour laisser la Parole descendre en vous. Enregistrez l'heure de début et de fin.</div>
+
+          <div class="time-row">
+            <div>
+              <label>Heure de début</label>
+              <input type="time" id="med-heure-debut" oninput="updateDurationPreview('med')">
+            </div>
+            <div>
+              <label>Heure de fin</label>
+              <input type="time" id="med-heure-fin" oninput="updateDurationPreview('med')">
+            </div>
+          </div>
+          <div class="duration-preview muted" id="med-duree-preview"><span>Durée</span><span class="val" id="med-duree-val">—</span></div>
+          <div class="field-error" id="med-error">Vérifiez les heures saisies (l'heure de fin doit suivre l'heure de début).</div>
+
+          <button class="btn-primary" onclick="saveSession('med')">Enregistrer la méditation</button>
+        </div>
+      </div>
+
+      <!-- PRIERE -->
+      <div id="tab-priere" class="tabpane hidden">
+        <div class="card">
+          <h2>Prière</h2>
+          <div class="desc">Le cœur ouvert devant le Seigneur. Enregistrez l'heure de début et de fin.</div>
+
+          <div class="time-row">
+            <div>
+              <label>Heure de début</label>
+              <input type="time" id="priere-heure-debut" oninput="updateDurationPreview('priere')">
+            </div>
+            <div>
+              <label>Heure de fin</label>
+              <input type="time" id="priere-heure-fin" oninput="updateDurationPreview('priere')">
+            </div>
+          </div>
+          <div class="duration-preview muted" id="priere-duree-preview"><span>Durée</span><span class="val" id="priere-duree-val">—</span></div>
+          <div class="field-error" id="priere-error">Vérifiez les heures saisies (l'heure de fin doit suivre l'heure de début).</div>
+
+          <button class="btn-primary" onclick="saveSession('priere')">Enregistrer la prière</button>
+        </div>
+      </div>
+
+      <!-- HISTORIQUE / RAPPORT -->
+      <div id="tab-rapport" class="tabpane hidden">
+        <div class="card">
+          <h2>Historique du mois</h2>
+          <div class="desc" id="rapport-mois-label"></div>
+          <div style="overflow-x:auto;">
+            <table class="hist" id="hist-table"></table>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Bilan global</h2>
+          <div id="bilan-global" class="small"></div>
+          <button class="btn-ghost" onclick="imprimerRapport()">🖨️ Imprimer / Enregistrer en PDF</button>
+          <button class="btn-ghost" onclick="genererCSV()">📄 Télécharger le rapport (CSV)</button>
+        </div>
+        <div class="center">
+          <button class="link-quiet" onclick="ouvrirGuide()">Espace guide spirituel</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="navbar">
+      <button class="navbtn active" data-tab="accueil" onclick="showTab('accueil')"><span class="ic">🏠</span>Accueil</button>
+      <button class="navbtn" data-tab="lecture" onclick="showTab('lecture')"><span class="ic">📖</span>Lecture</button>
+      <button class="navbtn" data-tab="med" onclick="showTab('med')"><span class="ic">🕊️</span>Méditation</button>
+      <button class="navbtn" data-tab="priere" onclick="showTab('priere')"><span class="ic">🙏</span>Prière</button>
+      <button class="navbtn" data-tab="rapport" onclick="showTab('rapport')"><span class="ic">📊</span>Rapport</button>
+    </div>
+  </div>
+
+  <!-- GUIDE MODE -->
+  <div id="guideMode" class="content hidden" style="padding-top:30px;">
+    <div class="eyebrow" style="color:var(--gold);text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:600;">Accès restreint</div>
+    <h1 class="display" style="font-size:24px;margin:6px 0 16px;">Espace guide spirituel</h1>
+
+    <div id="guide-pin-screen" class="card">
+      <label id="guide-pin-label">Code d'accès</label>
+      <input type="text" id="guide-pin-input" placeholder="••••">
+      <button class="btn-primary" onclick="checkGuidePin()">Entrer</button>
+      <button class="btn-ghost" onclick="closeGuide()">Retour au carnet</button>
+    </div>
+
+    <div id="guide-list-screen" class="hidden">
+      <p class="small">Suivi discret des personnes accompagnées — visible uniquement depuis cet accès.</p>
+      <div class="card" id="guide-list"></div>
+      <button class="btn-ghost" onclick="closeGuide()">Retour au carnet</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============ STOCKAGE LOCAL (hors ligne) ============
+   L'app utilisait window.storage, une API qui n'existe que dans
+   l'environnement des artefacts Claude.ai. En dehors de cet environnement
+   (fichier HTML ouvert directement dans un navigateur), window.storage
+   n'existe pas : chaque appel levait une erreur silencieusement rattrapée,
+   et rien ne se passait au clic sur "Commencer mon carnet".
+   On la remplace ici par une implémentation basée sur localStorage, qui
+   fonctionne entièrement hors connexion et garde exactement la même
+   interface (get/set/delete/list) que le reste du code attend déjà. */
+window.storage = {
+  async get(key, shared){
+    try{
+      const raw = localStorage.getItem('cdf:'+key);
+      if(raw === null) return null;
+      return {key, value: raw, shared: !!shared};
+    }catch(e){ return null; }
+  },
+  async set(key, value, shared){
+    try{
+      localStorage.setItem('cdf:'+key, value);
+      return {key, value, shared: !!shared};
+    }catch(e){ return null; }
+  },
+  async delete(key, shared){
+    try{
+      localStorage.removeItem('cdf:'+key);
+      return {key, deleted:true, shared: !!shared};
+    }catch(e){ return null; }
+  },
+  async list(prefix, shared){
+    try{
+      const keys = [];
+      const full = 'cdf:'+(prefix||'');
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k && k.indexOf(full)===0) keys.push(k.slice(4));
+      }
+      return {keys, prefix, shared: !!shared};
+    }catch(e){ return {keys:[]}; }
+  }
+};
+
+/* ============ DONNEES BIBLIQUES ============ */
+const AT = [
+["Genèse",50],["Exode",40],["Lévitique",27],["Nombres",36],["Deutéronome",34],["Josué",24],["Juges",21],
+["Ruth",4],["1 Samuel",31],["2 Samuel",24],["1 Rois",22],["2 Rois",25],["1 Chroniques",29],["2 Chroniques",36],
+["Esdras",10],["Néhémie",13],["Esther",10],["Job",42],["Psaumes",150],["Proverbes",31],["Ecclésiaste",12],
+["Cantique des Cantiques",8],["Ésaïe",66],["Jérémie",52],["Lamentations",5],["Ézéchiel",48],["Daniel",12],
+["Osée",14],["Joël",3],["Amos",9],["Abdias",1],["Jonas",4],["Michée",7],["Nahum",3],["Habacuc",3],
+["Sophonie",3],["Aggée",2],["Zacharie",14],["Malachie",4]
+];
+const NT = [
+["Matthieu",28],["Marc",16],["Luc",24],["Jean",21],["Actes",28],["Romains",16],["1 Corinthiens",16],
+["2 Corinthiens",13],["Galates",6],["Éphésiens",6],["Philippiens",4],["Colossiens",4],["1 Thessaloniciens",5],
+["2 Thessaloniciens",3],["1 Timothée",6],["2 Timothée",4],["Tite",3],["Philémon",1],["Hébreux",13],
+["Jacques",5],["1 Pierre",5],["2 Pierre",3],["1 Jean",5],["2 Jean",1],["3 Jean",1],["Jude",1],["Apocalypse",22]
+];
+function totalChapitres(list){return list.reduce((a,b)=>a+b[1],0);}
+
+/* ============ ETAT ============ */
+let profileId = null;
+let profile = null;
+function pad(n){return n.toString().padStart(2,'0');}
+function todayKey(d){d=d||new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function fmtDuration(totalMinutes){
+  const h=Math.floor(totalMinutes/60), m=totalMinutes%60;
+  return h>0 ? `${h} h ${pad(m)} min` : `${m} min`;
+}
+
+/* ============ HEURE DÉBUT / FIN -> DURÉE ============
+   Remplace l'ancien chronomètre en direct : la personne saisit l'heure à
+   laquelle elle a commencé et l'heure à laquelle elle a terminé, et la
+   durée est calculée automatiquement. Si l'heure de fin est antérieure à
+   l'heure de début, on suppose que la session a traversé minuit. */
+function minutesFromTimes(debut, fin){
+  if(!debut || !fin) return null;
+  const [dh,dm] = debut.split(':').map(Number);
+  const [fh,fm] = fin.split(':').map(Number);
+  let start = dh*60+dm, end = fh*60+fm;
+  if(end === start) return 0;
+  if(end < start) end += 24*60; // traverse minuit
+  return end - start;
+}
+function updateDurationPreview(prefix){
+  const debut = document.getElementById(prefix+'-heure-debut').value;
+  const fin = document.getElementById(prefix+'-heure-fin').value;
+  const previewEl = document.getElementById(prefix+'-duree-preview');
+  const valEl = document.getElementById(prefix+'-duree-val');
+  const errorEl = document.getElementById(prefix+'-error');
+  const minutes = minutesFromTimes(debut, fin);
+  errorEl.classList.remove('show');
+  if(minutes === null){
+    previewEl.classList.add('muted');
+    valEl.textContent = '—';
+    return null;
+  }
+  if(minutes === 0){
+    previewEl.classList.add('muted');
+    valEl.textContent = '—';
+    errorEl.classList.add('show');
+    return null;
+  }
+  previewEl.classList.remove('muted');
+  valEl.textContent = fmtDuration(minutes);
+  return minutes;
+}
+
+/* ============ INIT ============ */
+async function init(){
+  try{
+    const r = await window.storage.get('mon-profil-id', false);
+    if(r && r.value){
+      profileId = r.value;
+      await loadProfile();
+    } else {
+      document.getElementById('onboarding').classList.remove('hidden');
+    }
+  }catch(e){
+    document.getElementById('onboarding').classList.remove('hidden');
+  }
+}
+
+async function loadProfile(){
+  try{
+    const r = await window.storage.get('profil:'+profileId, true);
+    if(r && r.value){
+      profile = JSON.parse(r.value);
+      document.getElementById('onboarding').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      renderAll();
+    } else {
+      document.getElementById('onboarding').classList.remove('hidden');
+    }
+  }catch(e){
+    document.getElementById('onboarding').classList.remove('hidden');
+  }
+}
+
+async function createProfile(){
+  const nom = document.getElementById('ob-nom').value.trim();
+  const prenom = document.getElementById('ob-prenom').value.trim();
+  const objectifs = document.getElementById('ob-objectifs').value.trim();
+  const testament = document.getElementById('ob-testament').value;
+  if(!nom || !prenom){ alert("Merci de renseigner votre nom et votre prénom."); return; }
+
+  profileId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+  profile = {nom, prenom, objectifs, testament, bookIndex:0, chapter:0, createdAt: new Date().toISOString()};
+
+  try{
+    await window.storage.set('mon-profil-id', profileId, false);
+    await window.storage.set('profil:'+profileId, JSON.stringify(profile), true);
+  }catch(e){ alert("Erreur d'enregistrement, réessayez."); return; }
+
+  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  renderAll();
+}
+
+async function saveProfile(){
+  try{
+    await window.storage.set('profil:'+profileId, JSON.stringify(profile), true);
+  }catch(e){}
+}
+
+/* ============ RENDU ============ */
+function currentList(){ return profile.testament === 'AT' ? AT : NT; }
+
+function renderAll(){
+  const list = currentList();
+  document.getElementById('hdr-title').textContent = 'Bonjour ' + profile.prenom;
+  document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  document.getElementById('ribbon-testament').textContent = profile.testament === 'AT' ? 'Ancien Testament' : 'Nouveau Testament';
+
+  const bIdx = Math.min(profile.bookIndex, list.length-1);
+  const bookName = list[bIdx][0];
+  const chap = profile.chapter;
+  document.getElementById('ribbon-position').textContent = chap>0 ? `${bookName} ${chap}` : `Prêt à commencer — ${bookName} 1`;
+
+  let flatDone = 0;
+  for(let i=0;i<bIdx;i++) flatDone += list[i][1];
+  flatDone += chap;
+  const total = totalChapitres(list);
+  const pct = Math.round((flatDone/total)*100);
+  document.getElementById('ribbon-fill').style.width = pct+'%';
+  document.getElementById('ribbon-pct').textContent = pct+'%';
+  document.getElementById('ribbon-count').textContent = `${flatDone} / ${total} chapitres`;
+
+  renderObjectifs();
+  document.getElementById('today-date-label').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long'});
+
+  populateLectureSelectors();
+  refreshTodayStats();
+  refreshHistorique();
+}
+
+function renderObjectifs(){
+  const listEl = document.getElementById('mes-objectifs');
+  const raw = (profile.objectifs || '').split('\n').map(s=>s.trim()).filter(Boolean);
+  if(raw.length === 0){
+    listEl.innerHTML = '<li class="objectifs-empty">Aucun objectif renseigné pour l\'instant.</li>';
+    return;
+  }
+  listEl.innerHTML = raw.map((obj,i)=>`
+    <li class="objectif-item">
+      <span class="objectif-num">${i+1}</span>
+      <span class="objectif-text">${obj.replace(/</g,'&lt;')}</span>
+    </li>`).join('');
+}
+
+function populateLectureSelectors(){
+  const list = currentList();
+  const bIdx = Math.min(profile.bookIndex, list.length-1);
+  const sel = document.getElementById('lec-livre');
+  sel.innerHTML = '';
+  list.forEach((b,i)=>{
+    const o = document.createElement('option');
+    o.value = i; o.textContent = b[0];
+    if(i===bIdx) o.selected = true;
+    sel.appendChild(o);
+  });
+  populateChapSelector();
+  sel.onchange = populateChapSelector;
+}
+function populateChapSelector(){
+  const list = currentList();
+  const bIdx = parseInt(document.getElementById('lec-livre').value);
+  const chapSel = document.getElementById('lec-chapitre');
+  chapSel.innerHTML='';
+  const nbChap = list[bIdx][1];
+  const defaultChap = (bIdx === profile.bookIndex) ? Math.min(profile.chapter+1, nbChap) : 1;
+  for(let c=1;c<=nbChap;c++){
+    const o = document.createElement('option');
+    o.value=c; o.textContent = 'Chapitre '+c;
+    if(c===defaultChap) o.selected = true;
+    chapSel.appendChild(o);
+  }
+}
+
+/* ============ JOURNAL (données du jour) ============ */
+async function getJournal(dateKey){
+  try{
+    const r = await window.storage.get('journal:'+profileId+':'+dateKey, true);
+    if(r && r.value) return JSON.parse(r.value);
+  }catch(e){}
+  return {chapitresLus:0, tempsLecture:0, tempsMed:0, tempsPriere:0};
+}
+async function saveJournal(dateKey, journal){
+  try{
+    await window.storage.set('journal:'+profileId+':'+dateKey, JSON.stringify(journal), true);
+  }catch(e){}
+}
+async function refreshTodayStats(){
+  const j = await getJournal(todayKey());
+  document.getElementById('s-lb').textContent = j.chapitresLus || '';
+  document.getElementById('s-med').textContent = j.tempsMed || '';
+  document.getElementById('s-ps').textContent = j.tempsPriere || '';
+}
+
+/* ============ LECTURE ============ */
+async function saveLecture(){
+  const nbChapEl = document.getElementById('lec-nb-chapitres');
+  const debut = document.getElementById('lec-heure-debut').value;
+  const fin = document.getElementById('lec-heure-fin').value;
+  const errorEl = document.getElementById('lec-error');
+
+  const nbChap = parseInt(nbChapEl.value, 10);
+  if(isNaN(nbChap) || nbChap < 0){ nbChapEl.focus(); alert('Indiquez le nombre de chapitres lus.'); return; }
+
+  const minutes = minutesFromTimes(debut, fin);
+  if(minutes === null || minutes === 0){
+    errorEl.classList.add('show');
+    return;
+  }
+  errorEl.classList.remove('show');
+
+  // Met à jour la position dans la Bible (là où la personne est arrivée)
+  const targetBook = parseInt(document.getElementById('lec-livre').value);
+  const targetChap = parseInt(document.getElementById('lec-chapitre').value);
+  profile.bookIndex = targetBook;
+  profile.chapter = targetChap;
+  await saveProfile();
+
+  const dk = todayKey();
+  const j = await getJournal(dk);
+  j.chapitresLus += nbChap;
+  j.tempsLecture += minutes;
+  await saveJournal(dk, j);
+
+  nbChapEl.value = '';
+  document.getElementById('lec-heure-debut').value = '';
+  document.getElementById('lec-heure-fin').value = '';
+  updateDurationPreview('lec');
+
+  renderAll();
+}
+
+/* ============ MEDITATION / PRIERE ============ */
+async function saveSession(type){
+  const debut = document.getElementById(type+'-heure-debut').value;
+  const fin = document.getElementById(type+'-heure-fin').value;
+  const errorEl = document.getElementById(type+'-error');
+
+  const minutes = minutesFromTimes(debut, fin);
+  if(minutes === null || minutes === 0){
+    errorEl.classList.add('show');
+    return;
+  }
+  errorEl.classList.remove('show');
+
+  const dk = todayKey();
+  const j = await getJournal(dk);
+  if(type==='med') j.tempsMed += minutes; else j.tempsPriere += minutes;
+  await saveJournal(dk, j);
+
+  document.getElementById(type+'-heure-debut').value = '';
+  document.getElementById(type+'-heure-fin').value = '';
+  updateDurationPreview(type);
+
+  renderAll();
+}
+
+/* ============ NAVIGATION ============ */
+function showTab(name){
+  document.querySelectorAll('.tabpane').forEach(el=>el.classList.add('hidden'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.navbtn[data-tab="'+name+'"]').classList.add('active');
+  if(name==='rapport') buildRapportView();
+}
+
+/* ============ HISTORIQUE / RAPPORT DU MOIS ============ */
+async function getMonthData(year, month){ // month 0-indexed
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const data = [];
+  for(let d=1; d<=daysInMonth; d++){
+    const dk = year+"-"+pad(month+1)+"-"+pad(d);
+    const j = await getJournal(dk);
+    data.push({jour:d, ...j});
+  }
+  return data;
+}
+
+async function refreshHistorique(){
+  const table = document.getElementById('hist-table');
+  if(!table) return;
+}
+
+async function buildRapportView(){
+  const now = new Date();
+  const data = await getMonthData(now.getFullYear(), now.getMonth());
+  document.getElementById('rapport-mois-label').textContent = now.toLocaleDateString('fr-FR',{month:'long', year:'numeric'});
+
+  let html = '<tr><th>Jour</th><th>LB</th><th>MED</th><th>PS</th></tr>';
+  data.forEach(row=>{
+    html += `<tr><td>${row.jour}</td><td>${row.chapitresLus||''}</td><td>${row.tempsMed||''}</td><td>${row.tempsPriere||''}</td></tr>`;
+  });
+  document.getElementById('hist-table').innerHTML = html;
+
+  const bilan = computeBilan(data);
+  document.getElementById('bilan-global').innerHTML = `
+    <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);">
+      <div class="stat"><div class="num">${bilan.joursActifsPct}%</div><div class="lab">Jours actifs / mois</div></div>
+      <div class="stat"><div class="num">${bilan.totalChapitres}</div><div class="lab">Chapitres lus</div></div>
+      <div class="stat"><div class="num">${bilan.moyChapParJour}</div><div class="lab">Moy. chap / jour actif</div></div>
+      <div class="stat"><div class="num">${bilan.totalMed}min</div><div class="lab">Total méditation</div></div>
+      <div class="stat"><div class="num">${bilan.totalPriere}min</div><div class="lab">Total prière</div></div>
+      <div class="stat"><div class="num">${bilan.ratioEquilibre}</div><div class="lab">Ratio LB:MED:PS</div></div>
+    </div>`;
+  window._lastBilan = bilan;
+  window._lastData = data;
+}
+
+function computeBilan(data){
+  const joursActifs = data.filter(d=>d.chapitresLus>0 || d.tempsMed>0 || d.tempsPriere>0).length;
+  const totalChapitres = data.reduce((a,d)=>a+(d.chapitresLus||0),0);
+  const totalMed = data.reduce((a,d)=>a+(d.tempsMed||0),0);
+  const totalPriere = data.reduce((a,d)=>a+(d.tempsPriere||0),0);
+  const totalLectureMin = data.reduce((a,d)=>a+(d.tempsLecture||0),0);
+  const joursActifsPct = Math.round((joursActifs/data.length)*100);
+  const moyChapParJour = joursActifs>0 ? (totalChapitres/joursActifs).toFixed(1) : '0';
+  const sum = totalChapitres+totalMed+totalPriere || 1;
+  const ratioEquilibre = `${Math.round(totalChapitres/sum*100)}:${Math.round(totalMed/sum*100)}:${Math.round(totalPriere/sum*100)}`;
+  return {joursActifs, totalChapitres, totalMed, totalPriere, totalLectureMin, joursActifsPct, moyChapParJour, ratioEquilibre, totalJours:data.length};
+}
+
+/* ============ RAPPORT (export hors ligne) ============
+   L'ancienne version chargeait la librairie jsPDF depuis un CDN : sans
+   connexion internet, le script ne se chargeait pas et le bouton ne
+   faisait rien. On la remplace par deux options qui fonctionnent
+   entièrement hors ligne, sans aucune dépendance externe :
+   1) un export CSV (tableur), généré localement ;
+   2) une vue imprimable dont le "Enregistrer au format PDF" du navigateur
+      (disponible dans toute boîte de dialogue d'impression) recrée un PDF
+      sans bibliothèque tierce. */
+function csvEscape(v){
+  const s = String(v ?? '');
+  return /[",\n;]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+async function genererCSV(){
+  const now = new Date();
+  if(!window._lastData) await buildRapportView();
+  const data = window._lastData;
+  const bilan = window._lastBilan;
+  const moisLabel = now.toLocaleDateString('fr-FR',{month:'long', year:'numeric'});
+
+  let lines = [];
+  lines.push(['Carnet de Foi','Rapport mensuel'].map(csvEscape).join(';'));
+  lines.push([`${profile.prenom} ${profile.nom}`].map(csvEscape).join(';'));
+  lines.push([`Mois : ${moisLabel}`].map(csvEscape).join(';'));
+  lines.push('');
+  lines.push(['Jour','LB (chap.)','MED (min)','PS (min)'].map(csvEscape).join(';'));
+  data.forEach(d=>{
+    lines.push([d.jour, d.chapitresLus||'', d.tempsMed||'', d.tempsPriere||''].map(csvEscape).join(';'));
+  });
+  lines.push('');
+  lines.push(['Bilan global du mois'].map(csvEscape).join(';'));
+  lines.push([`Jours actifs : ${bilan.joursActifs} / ${bilan.totalJours} (${bilan.joursActifsPct}%)`].map(csvEscape).join(';'));
+  lines.push([`Total chapitres lus (LB) : ${bilan.totalChapitres}`].map(csvEscape).join(';'));
+  lines.push([`Moyenne de chapitres par jour actif : ${bilan.moyChapParJour}`].map(csvEscape).join(';'));
+  lines.push([`Temps total de lecture : ${bilan.totalLectureMin} min`].map(csvEscape).join(';'));
+  lines.push([`Temps total de méditation (MED) : ${bilan.totalMed} min`].map(csvEscape).join(';'));
+  lines.push([`Temps total de prière (PS) : ${bilan.totalPriere} min`].map(csvEscape).join(';'));
+  lines.push([`Ratio d'équilibre LB : MED : PS = ${bilan.ratioEquilibre}`].map(csvEscape).join(';'));
+  if(profile.objectifs){
+    lines.push('');
+    lines.push(['Objectifs personnels'].map(csvEscape).join(';'));
+    lines.push([profile.objectifs].map(csvEscape).join(';'));
+  }
+
+  const blob = new Blob(['\uFEFF'+lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `rapport-${profile.prenom}-${moisLabel}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function imprimerRapport(){
+  const now = new Date();
+  if(!window._lastData) await buildRapportView();
+  const data = window._lastData;
+  const bilan = window._lastBilan;
+  const moisLabel = now.toLocaleDateString('fr-FR',{month:'long', year:'numeric'});
+
+  const rows = data.map(d=>`<tr><td>${d.jour}</td><td>${d.chapitresLus||''}</td><td>${d.tempsMed||''}</td><td>${d.tempsPriere||''}</td></tr>`).join('');
+  const win = window.open('', '_blank');
+  if(!win){ alert("Le navigateur a bloqué l'ouverture de la fenêtre d'impression. Autorisez les fenêtres pop-up pour ce site puis réessayez."); return; }
+  win.document.write(`
+    <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+    <title>Rapport - ${profile.prenom} ${profile.nom}</title>
+    <style>
+      body{font-family:Georgia,serif;color:#1c2b3a;padding:30px;}
+      h1{font-size:22px;margin-bottom:2px;}
+      h2{font-size:16px;margin-top:26px;}
+      table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;}
+      th,td{border:1px solid #ccc;padding:6px 8px;text-align:center;}
+      th{background:#1c2b3a;color:#fff;}
+      ul{font-size:13px;line-height:1.6;}
+      .obj{white-space:pre-wrap;font-size:13px;}
+    </style></head><body>
+    <h1>Carnet de Foi — Rapport mensuel</h1>
+    <div>${profile.prenom} ${profile.nom}</div>
+    <div>Mois : ${moisLabel}</div>
+    <table><thead><tr><th>Jour</th><th>LB (chap.)</th><th>MED (min)</th><th>PS (min)</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <h2>Bilan global du mois</h2>
+    <ul>
+      <li>Jours actifs : ${bilan.joursActifs} / ${bilan.totalJours} (${bilan.joursActifsPct}%)</li>
+      <li>Total chapitres lus (LB) : ${bilan.totalChapitres}</li>
+      <li>Moyenne de chapitres par jour actif : ${bilan.moyChapParJour}</li>
+      <li>Temps total de lecture : ${bilan.totalLectureMin} min</li>
+      <li>Temps total de méditation (MED) : ${bilan.totalMed} min</li>
+      <li>Temps total de prière (PS) : ${bilan.totalPriere} min</li>
+      <li>Ratio d'équilibre LB : MED : PS = ${bilan.ratioEquilibre}</li>
+    </ul>
+    ${profile.objectifs ? `<h2>Objectifs personnels</h2><div class="obj">${profile.objectifs.replace(/</g,'&lt;')}</div>` : ''}
+    <script>window.onload=()=>{window.print();}<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+/* ============ ESPACE GUIDE ============ */
+async function ouvrirGuide(){
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('guideMode').classList.remove('hidden');
+  document.getElementById('guide-pin-screen').classList.remove('hidden');
+  document.getElementById('guide-list-screen').classList.add('hidden');
+
+  let r;
+  try{ r = await window.storage.get('guide-pin', true); }catch(e){ r=null; }
+  if(!r || !r.value){
+    document.getElementById('guide-pin-label').textContent = "Créez un code d'accès guide (4 chiffres min.)";
+  } else {
+    document.getElementById('guide-pin-label').textContent = "Code d'accès";
+  }
+}
+function closeGuide(){
+  document.getElementById('guideMode').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+}
+async function checkGuidePin(){
+  const val = document.getElementById('guide-pin-input').value.trim();
+  if(!val){ return; }
+  let r;
+  try{ r = await window.storage.get('guide-pin', true); }catch(e){ r=null; }
+  if(!r || !r.value){
+    if(val.length<4){ alert('Choisissez un code d\'au moins 4 caractères.'); return; }
+    await window.storage.set('guide-pin', val, true);
+    await showGuideList();
+  } else if(r.value === val){
+    await showGuideList();
+  } else {
+    alert('Code incorrect.');
+  }
+}
+async function showGuideList(){
+  document.getElementById('guide-pin-screen').classList.add('hidden');
+  document.getElementById('guide-list-screen').classList.remove('hidden');
+  const listEl = document.getElementById('guide-list');
+  listEl.innerHTML = '<p class="small">Chargement…</p>';
+
+  let keysRes;
+  try{ keysRes = await window.storage.list('profil:', true); }catch(e){ keysRes=null; }
+  if(!keysRes || !keysRes.keys || keysRes.keys.length===0){
+    listEl.innerHTML = '<p class="small">Personne n\'a encore créé de carnet.</p>';
+    return;
+  }
+  const dk = todayKey();
+  let html = '';
+  for(const key of keysRes.keys){
+    const pid = key.replace('profil:','');
+    let profR, jourR;
+    try{ profR = await window.storage.get(key, true); }catch(e){ continue; }
+    if(!profR || !profR.value) continue;
+    const p = JSON.parse(profR.value);
+    let j = {chapitresLus:0, tempsMed:0, tempsPriere:0};
+    try{
+      jourR = await window.storage.get('journal:'+pid+':'+dk, true);
+      if(jourR && jourR.value) j = JSON.parse(jourR.value);
+    }catch(e){}
+    const luAujourdhui = j.chapitresLus>0;
+    const parts = [];
+    if(j.chapitresLus) parts.push(`${j.chapitresLus} chap.`);
+    if(j.tempsMed) parts.push(`${j.tempsMed} min méd.`);
+    if(j.tempsPriere) parts.push(`${j.tempsPriere} min prière`);
+    const subLabel = parts.length ? parts.join(' · ') + " aujourd'hui" : "Aucune activité enregistrée aujourd'hui";
+    html += `<div class="guide-item">
+      <div>
+        <div class="guide-name">${p.prenom} ${p.nom}</div>
+        <div class="guide-sub">${subLabel}</div>
+      </div>
+      <span class="pill ${luAujourdhui?'ok':'no'}">${luAujourdhui?'Lu aujourd\'hui':'Pas encore'}</span>
+    </div>`;
+  }
+  listEl.innerHTML = html || '<p class="small">Aucune donnée disponible.</p>';
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+init();
+</script>
+</body>
+</html>
